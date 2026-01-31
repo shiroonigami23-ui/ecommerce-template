@@ -1,0 +1,45 @@
+name: Update Docker Base Images
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Every Monday at 8 AM
+  workflow_dispatch:
+
+jobs:
+  update-docker-images:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Update Node.js base image in frontend
+      run: |
+        sed -i 's/FROM node:18-alpine AS builder/FROM node:20-alpine AS builder/g' frontend/Dockerfile
+        sed -i 's/FROM node:18-alpine AS runner/FROM node:20-alpine AS runner/g' frontend/Dockerfile
+    
+    - name: Update Node.js base image in backend
+      run: |
+        sed -i 's/FROM node:18-alpine/FROM node:20-alpine/g' backend/Dockerfile
+    
+    - name: Update MongoDB image
+      run: |
+        sed -i 's/image: mongo:6/image: mongo:7/g' docker-compose.yml
+    
+    - name: Update Redis image
+      run: |
+        sed -i 's/image: redis:7-alpine/image: redis:8-alpine/g' docker-compose.yml
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        commit-message: 'chore: update docker base images to latest versions'
+        title: 'Update Docker Base Images to Latest Versions'
+        body: |
+          This PR updates all Docker base images to their latest stable versions:
+          - Node.js 18 → 20
+          - MongoDB 6 → 7
+          - Redis 7 → 8
+          
+          Automated by GitHub Actions.
+        branch: update/docker-images
+        delete-branch: true

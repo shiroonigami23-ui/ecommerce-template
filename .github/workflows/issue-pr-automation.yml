@@ -1,0 +1,114 @@
+name: Issue and PR Automation
+
+on:
+  issues:
+    types: [opened, labeled]
+  pull_request:
+    types: [opened, reopened, labeled]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    
+    steps:
+    - name: Welcome new issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const issue = context.payload.issue;
+          const comment = `👋 Thanks for opening an issue, @${issue.user.login}!
+          
+          Our team will review this issue shortly. In the meantime, please make sure:
+          1. You've provided enough details to reproduce the issue
+          2. You've checked for existing similar issues
+          3. You're using the latest version
+          
+          We appreciate your contribution! ❤️`;
+          
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue.number,
+            body: comment
+          });
+
+  assign:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'feature')
+    
+    steps:
+    - name: Assign issue to project maintainers
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const issue = context.payload.issue;
+          await github.rest.issues.addAssignees({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue.number,
+            assignees: ['shiroonigami23']
+          });
+
+  pr-checks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    
+    steps:
+    - name: Check PR description
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          if (pr.body.length < 50) {
+            const comment = `📝 Please add a more detailed description to your PR.
+            
+            A good PR description should include:
+            - What changes were made
+            - Why these changes are necessary
+            - Any related issues
+            - Screenshots if applicable
+            
+            This helps reviewers understand your contribution better.`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: comment
+            });
+            
+            // Add label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: ['needs-more-info']
+            });
+          }
+
+  size-label:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Label PR based on size
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const changes = pr.additions + pr.deletions;
+          let size = 'size/';
+          
+          if (changes < 10) size += 'XS';
+          else if (changes < 30) size += 'S';
+          else if (changes < 100) size += 'M';
+          else if (changes < 500) size += 'L';
+          else size += 'XL';
+          
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: pr.number,
+            labels: [size]
+          });
