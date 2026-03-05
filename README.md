@@ -40,7 +40,7 @@ A production-ready, full-stack e-commerce template built with modern technologie
 ## 📁 Project Structure
 
 ecommerce-template/
-├── frontend/                 # Next.js 14 frontend
+```├── frontend/                 # Next.js 14 frontend
 │   ├── app/                 # App router pages
 │   │   ├── layout.tsx      # Root layout with Header & Footer
 │   │   └── page.tsx        # Home page with all sections
@@ -65,6 +65,7 @@ ecommerce-template/
 │   └── schemas/          # Validation schemas
 ├── .github/workflows/     # GitHub Actions
 └── docker/               # Docker configuration
+```
 
 ## 🚀 Quick Start
 
